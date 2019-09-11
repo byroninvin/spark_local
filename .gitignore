@@ -2,3 +2,4 @@
 .idea
 metastore_db
 spark-warehouse
+derby.log
