@@ -1,5 +1,7 @@
 package demo.sparksql
 
+import java.util.Properties
+
 import org.apache.spark.SparkConf
 import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.sql.SparkSession
@@ -50,6 +52,26 @@ object SparkApiUDF {
 
     val floatToDenseVector = (array: mutable.WrappedArray[Float]) => Vectors.dense(array.toArray.map(_.toDouble))
     val floatToDenseVectorUDF = udf(floatToDenseVector)
+
+
+    /**
+     * 场景三
+     */
+    //创建一个UDF判断需要取出的影片名, 下面要用到
+    spark.udf.register("del_name", (title: String) => {
+
+      var statu = 0
+      val list_del = List("3D", "HDR", "Dolby Vision", "DRM", "4K", "Atmos")
+
+      for (i <- list_del.indices) {
+        if (title.contains(list_del(i))) {
+
+          statu = 1
+        }
+      }
+
+      statu
+    })
 
 
     spark.stop()

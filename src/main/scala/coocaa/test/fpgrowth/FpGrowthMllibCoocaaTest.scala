@@ -3,6 +3,7 @@ package coocaa.test.fpgrowth
 import coocaa.test.common.DateUtil
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkConf
+import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.mllib.fpm.FPGrowth
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.functions._
