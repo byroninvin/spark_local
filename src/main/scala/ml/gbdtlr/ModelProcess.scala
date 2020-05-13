@@ -19,11 +19,11 @@ import org.apache.spark.sql.{DataFrame, SQLContext, SparkSession}
 class ModelProcess {
 
   /**
-   *
-   * @param train
-   * @param test
+   * 为了更方便的获取GradientBoostedTrees的中间结果，所以使用mllib版本的
+   * @param train 训练数据rdd
+   * @param test 测试数据rdd
    * @param spark
-   * @return
+   * @return （trainDF, testDF, gbtModel, treeLeafArray)
    */
   def gbtFeatureProcess(train:RDD[(String, LabeledPoint, (Double, DenseVector))],
                         test:RDD[(String, LabeledPoint, (Double, DenseVector))],
@@ -53,8 +53,11 @@ class ModelProcess {
   }
 
 
-
-
+  /**
+   *
+   * @param data
+   * @return
+   */
   def pipelineTrain(data: DataFrame): PipelineModel = {
     data.persist()
     // stage1 scaler model

@@ -68,7 +68,6 @@ class ModelPredicter {
 
     result
 
-
   }
 
 

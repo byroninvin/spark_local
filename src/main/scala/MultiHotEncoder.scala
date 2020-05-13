@@ -2,10 +2,9 @@ import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer}
 import org.apache.spark.sql.functions._
-
-
-import breeze.linalg.{SparseVector => BV}
-import org.apache.spark.ml.linalg.{Vectors, SparseVector => SparkVector}
+import breeze.linalg.{DenseVector => BV, SparseVector => BSV}
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.ml.linalg.{Vectors, DenseVector => SparkDenseVector, SparseVector => SparkSparseVector}
 
 
 /**
@@ -13,13 +12,21 @@ import org.apache.spark.ml.linalg.{Vectors, SparseVector => SparkVector}
  */
 object MultiHotEncoder {
 
-  def toBreeze(v: SparkVector) = BV(v.toArray)
-  def fromBreeze(bv: BV[Double]) = Vectors.dense(bv.toArray)
-  def sparse_add(v1: SparkVector, v2: SparkVector): SparkVector = fromBreeze(toBreeze(v1) + toBreeze(v2)).toSparse
+  // SparseVector -> BV
+  def sparkSVToBreeze(v: SparkSparseVector) = BSV(v.toArray)
+  def sparkDVToBreeze(v: SparkDenseVector) = BV(v.toArray)
+  // BSV/BV => Vector
+  def fromBreezeSV(bv: BSV[Double]) = Vectors.dense(bv.toArray)
+  def fromBreezeDV(bv: BV[Double]) = Vectors.dense(bv.toArray)
+  // Vector + operation => sparkSV / sparkDV
+  def sparse_add(v1: SparkSparseVector, v2: SparkSparseVector): SparkSparseVector = fromBreezeSV(sparkSVToBreeze(v1) + sparkSVToBreeze(v2)).toSparse
+  def vectors_multi_catch(v1: SparkDenseVector, v2: Double): SparkDenseVector = fromBreezeDV(sparkDVToBreeze(v1):* v2).toDense
 
 
   def main(args: Array[String]): Unit = {
 
+    Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
+    Logger.getLogger("org.eclipse.jetty.server").setLevel(Level.OFF)
     val spark: SparkSession = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .config("spark.rdd.compress", "true")
@@ -64,7 +71,7 @@ object MultiHotEncoder {
 
     encoder.show(false)
 
-    encoder.rdd.map {row =>
+    val denseVector = encoder.rdd.map {row =>
 
       val user = row.getAs[Int]("user")
       val movie_vector = row.getAs[org.apache.spark.ml.linalg.SparseVector]("encoded")
@@ -74,7 +81,18 @@ object MultiHotEncoder {
       val user = row._1
       val movie_vector = row._2
       (user, movie_vector.toDense)
-    }.toDF("user", "multi_hot").show(false)
+    }.toDF("user", "multi_hot")
+
+    denseVector.show(false)
+
+
+    /**
+     * 测试
+     */
+    val vectors_multi_catch_UDF = udf(vectors_multi_catch _)
+
+    denseVector.withColumn("rating1", lit(2.0))
+        .withColumn("result", vectors_multi_catch_UDF(col("multi_hot"), col("rating1"))).show(false)
 
 
 
