@@ -62,7 +62,7 @@
     
     <property>
       <name>hadoop.proxyuser.hive.hosts</name>
-      <value>kylin.coocaa.cd8.com,xl.namenode2.coocaa.com</value>
+      <value>xl.flume1.coocaa.com,xl.namenode2.coocaa.com</value>
     </property>
     
     <property>
